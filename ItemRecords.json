@@ -1,0 +1,106 @@
+{
+     "SURVIVOR": {
+          "1": [
+               "000000002c7e3c38",
+               "RAINBOW MAP"
+          ],
+          "2": [
+               "00000d10272f2f22",
+               "SKELETON KEY"
+          ],
+          "3": [
+               "1975c40404050406",
+               "ALEX'S TOOLBOX"
+          ],
+          "4": [
+               "00001343585c4e46",
+               "DULL KEY"
+          ],
+          "5": [
+               "f8f8f8c0e0e0e0e0",
+               "ENGINEER'S TOOLBOX"
+          ],
+          "6": [
+               "ffffe2f030010100",
+               "RANGER MED-KIT"
+          ],
+          "7": [
+               "c4000000c0c0c080",
+               "UTILITY FLASHLIGHT"
+          ],
+          "8": [
+               "0f0f26000f000000",
+               "BROKEN KEY"
+          ],
+          "9": [
+               "7f0f870090fcfc18",
+               "COMMODIOUS TOOLBOX"
+          ],
+          "10": [
+               "00000000e0e0e0e0",
+               "EMERGENCY MED-KIT"
+          ],
+          "11": [
+               "b0df40f23e3e0cf8",
+               "MAP"
+          ],
+          "12": [
+               "0120000027efd09e",
+               "MECHANIC'S TOOLBOX"
+          ],
+          "13": [
+               "ffffff818105c4c0",
+               "SPORT FLASHLIGHT"
+          ],
+          "14": [
+               "f9e783e0c0c8ff8f",
+               "FIRST AID-KIT"
+          ],
+          "15": [
+               "0501031f47038f1f",
+               "FLASHLIGHT"
+          ],
+          "16": [
+               "000080002c7e3c38",
+               "TOOLBOX"
+          ],
+          "17": [
+               "00000d10272f2f22",
+               "CAMPING AID-KIT"
+          ],
+          "18": [
+               "1975c40404050406",
+               "WORN-OUT TOOLS"
+          ]
+     },
+     "TRAPPER": {},
+     "WRAITH": {},
+     "HILLBILLY": {},
+     "NURSE": {},
+     "HUNTRESS": {},
+     "SHAPE": {},
+     "HAG": {},
+     "DOCTOR": {},
+     "CANNIBAL": {},
+     "NIGHTMARE": {},
+     "PIG": {},
+     "CLOWN": {},
+     "SPIRT": {},
+     "LEGION": {},
+     "PLAGUE": {},
+     "GHOSTFACE": {},
+     "DEMOGORGON": {},
+     "ONI": {},
+     "DEATHSLINGER": {},
+     "EXECUTIONER": {},
+     "BLIGHT": {},
+     "TWINS": {},
+     "TRICKSTER": {},
+     "NEMESIS": {},
+     "CENOBITE": {},
+     "ARTIST": {},
+     "ONRYO": {},
+     "DREDGE": {},
+     "MASTERMIND": {},
+     "KNIGHT": {}
+}
