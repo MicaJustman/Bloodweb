@@ -41,7 +41,8 @@ transform = transforms.Compose([
     transforms.Normalize([.5], [.5])
 ])
 
-train_set = nodes(annotations_file='C:/Users/mica/PycharmProjects/BloodWeb/DataSet.csv', img_dir='C:/Users/mica/PycharmProjects/BloodWeb/train', transform=transform)
+
+train_set = torchvision.datasets.ImageFolder(root='C:/Users/mica/PycharmProjects/BloodWeb/train', transform=transform)
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 
 model = torchvision.models.resnet18()
