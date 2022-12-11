@@ -15,7 +15,8 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 4  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+          # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 display = 1 # display 1 for show predictions
 mouse = Controller()
 halt = False
@@ -50,6 +51,26 @@ webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
             (394, 633), (393, 523), (450, 424), (449, 304), (611, 260),
             (773, 304), (892, 421), (935, 578), (891, 736), (774, 853),
             (611, 896), (449, 854), (331, 734), (286, 578), (331, 422)]
+
+# monitor coords of each graph line
+lineIndex = [(563, 458), (584, 424), (635, 425), (657, 456), #0
+             (693, 474), (736, 476), (759, 524), (743, 557),
+             (743, 600), (755, 633), (735, 677), (694, 682),
+             (662, 705), (635, 733), (584, 738), (559, 704),
+             (528, 682), (483, 680), (457, 633), (478, 600),
+             (477, 559), (463, 522), (485, 477), (529, 476), #5
+             (506, 338), (583, 317),
+             (638, 313), (718, 337),
+             (771, 363), (828, 424),
+             (860, 474), (875, 548),
+             (884, 604), (859, 687), #10
+             (830, 733), (772, 793),
+             (721, 820), (639, 843),
+             (583, 845), (504, 818),
+             (449, 795), (388, 733),
+             (364, 683), (340, 599), #15
+             (348, 549), (381, 477),
+             (390, 424), (451, 365)]
 
 
 # stops the code
@@ -96,6 +117,12 @@ def recordWeb(key):
     if len(webIndex) == 30:
         print(webIndex)
 
+# records mouse coords on press and prints at 48
+def recordLine(key):
+    global lineIndex
+    lineIndex.append((mouse.position[0], mouse.position[1]))
+    if len(lineIndex) == 48                                                :
+        print(lineIndex)
 
 # transform function for pytorch model
 transform = torchvision.transforms.Compose([
@@ -156,9 +183,9 @@ if mode == 0:
             screen.fill(fuchsia)  # Transparent background
 
             for x in range(30):
-                if nodes[x] == 0:
+                if nodes[x] == 1 or nodes[x] == 0:
                     pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
-                elif nodes[x] == 1:
+                elif nodes[x] == 2:
                     pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
                 else:
                     pygame.draw.arc(screen, red, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
@@ -212,5 +239,53 @@ elif mode == 2:
     # saves the node pics for addition to the machine learning folders
     for x in webIndex:
         temp = fromarray(img[x[1] - 40:x[1] + 40, x[0] - 40:x[0] + 40])
+        temp.save('Web/' + str(current_time) + str(counter) + ".png")
+        counter += 1
+
+elif mode == 3:
+    # uncomment this line and clear LineIndex to record new indexes. Hit any key to store the location of the mouse
+    '''with keyboard.Listener(on_press=recordLine) as listener:
+            listener.join()'''
+
+    # pygame init display
+    pygame.init()
+    screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
+    done = False
+    fuchsia = (255, 0, 128)  # Transparency color
+    blue = (255, 255, 255)
+
+    # Create layered window
+    hwnd = pygame.display.get_wm_info()["window"]
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
+
+    # Set window transparency color
+    SetLayeredWindowAttributes(hwnd, RGB(*fuchsia), 0, LWA_COLORKEY)
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
+
+    # draws the boxes in color
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+
+        screen.fill(fuchsia)  # Transparent background
+
+        for x in lineIndex:
+            pygame.draw.rect(screen, blue, pygame.Rect(x[0] - 10, x[1] - 10, 20, 20), 1)
+
+        pygame.display.update()
+
+elif mode == 4:
+    counter = 0
+    time_now = datetime.now()
+    current_time = time_now.strftime("%H%M%S")
+
+    # grabs the screen
+    img = grabImage(width, height, 0, 0, DBDhwnd)
+    fromarray(img).save("test.png")
+
+    # saves the line pics for addition to the machine learning folders
+    for x in lineIndex:
+        temp = fromarray(img[x[1] - 10:x[1] + 10, x[0] - 10:x[0] + 10])
         temp.save('Web/' + str(current_time) + str(counter) + ".png")
         counter += 1
