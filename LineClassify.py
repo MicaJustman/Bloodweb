@@ -16,7 +16,7 @@ transform = transforms.Compose([
     transforms.Normalize([.5], [.5])
 ])
 
-train_set = torchvision.datasets.ImageFolder(root='NodeTrain', transform=transform)
+train_set = torchvision.datasets.ImageFolder(root='LineTrain', transform=transform)
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 
 model = torchvision.models.resnet18()
@@ -42,4 +42,4 @@ for epoch in range(num_epochs):
 
     print("Epoch:" + str(epoch) + "  loss:" + str(running_loss/train_set.__len__()) + "  Acc:" + str(total_correct/train_set.__len__()))
 
-torch.save(model.state_dict(), "NodeModel.pth")
+torch.save(model.state_dict(), "LineModel.pth")

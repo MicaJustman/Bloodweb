@@ -15,7 +15,7 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 4  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 3  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 display = 1 # display 1 for show predictions
 mouse = Controller()
@@ -44,6 +44,28 @@ AdjecentDict = {
     17: [29, 18]
 }
 
+#line coords for node adj list
+LineCoordsDict = {
+    0:[(563, 458), (584, 424), (635, 425), (657, 456)],
+    1:[(693, 474), (736, 476), (759, 524), (743, 557)],
+    2:[(743, 600), (755, 633), (735, 677), (694, 682)],
+    3:[(662, 705), (635, 733), (584, 738), (559, 704)],
+    4:[(528, 682), (483, 680), (457, 633), (478, 600)],
+    5:[(477, 559), (463, 522), (485, 477), (529, 476)],
+    6:[(506, 338), (583, 317)],
+    7:[(638, 313), (718, 337)],
+    8:[(771, 363), (828, 424)],
+    9:[(860, 474), (875, 548)],
+    10:[(884, 604), (859, 687)],
+    11:[(830, 733), (772, 793)],
+    12:[(721, 820), (639, 843)],
+    13:[(583, 845), (504, 818)],
+    14:[(449, 795), (388, 733)],
+    15:[(364, 683), (340, 605)],
+    16:[(348, 549), (381, 477)],
+    17:[(390, 424), (451, 365)],
+}
+
 # monitor coords of each node spot
 webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
             (516, 523), (555, 367), (666, 368), (771, 424), (828, 524),
@@ -51,27 +73,6 @@ webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
             (394, 633), (393, 523), (450, 424), (449, 304), (611, 260),
             (773, 304), (892, 421), (935, 578), (891, 736), (774, 853),
             (611, 896), (449, 854), (331, 734), (286, 578), (331, 422)]
-
-# monitor coords of each graph line
-lineIndex = [(563, 458), (584, 424), (635, 425), (657, 456), #0
-             (693, 474), (736, 476), (759, 524), (743, 557),
-             (743, 600), (755, 633), (735, 677), (694, 682),
-             (662, 705), (635, 733), (584, 738), (559, 704),
-             (528, 682), (483, 680), (457, 633), (478, 600),
-             (477, 559), (463, 522), (485, 477), (529, 476), #5
-             (506, 338), (583, 317),
-             (638, 313), (718, 337),
-             (771, 363), (828, 424),
-             (860, 474), (875, 548),
-             (884, 604), (859, 687), #10
-             (830, 733), (772, 793),
-             (721, 820), (639, 843),
-             (583, 845), (504, 818),
-             (449, 795), (388, 733),
-             (364, 683), (340, 599), #15
-             (348, 549), (381, 477),
-             (390, 424), (451, 365)]
-
 
 # stops the code
 def on_press(key):
@@ -170,7 +171,8 @@ if mode == 0:
             fuchsia = (255, 0, 128)  # Transparency color
             blue = (0, 0, 255)
             green = (0, 255, 0)
-            red = (255, 255, 255)
+            white = (255, 255, 255)
+            cyan = (0, 255, 255)
 
             # Create layered window
             hwnd = pygame.display.get_wm_info()["window"]
@@ -188,7 +190,7 @@ if mode == 0:
                 elif nodes[x] == 2:
                     pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
                 else:
-                    pygame.draw.arc(screen, red, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
+                    pygame.draw.arc(screen, white, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
 
             pygame.display.update()
             sleep(30)
@@ -270,8 +272,9 @@ elif mode == 3:
 
         screen.fill(fuchsia)  # Transparent background
 
-        for x in lineIndex:
-            pygame.draw.rect(screen, blue, pygame.Rect(x[0] - 10, x[1] - 10, 20, 20), 1)
+        for x in LineCoordsDict:
+            for y in LineCoordsDict[x]:
+                pygame.draw.rect(screen, blue, pygame.Rect(y[0] - 10, y[1] - 10, 20, 20), 1)
 
         pygame.display.update()
 
@@ -285,7 +288,8 @@ elif mode == 4:
     fromarray(img).save("test.png")
 
     # saves the line pics for addition to the machine learning folders
-    for x in lineIndex:
-        temp = fromarray(img[x[1] - 10:x[1] + 10, x[0] - 10:x[0] + 10])
-        temp.save('Web/' + str(current_time) + str(counter) + ".png")
-        counter += 1
+    for x in LineCoordsDict:
+        for y in LineCoordsDict[x]:
+            temp = fromarray(img[y[1] - 10:y[1] + 10, y[0] - 10:y[0] + 10])
+            temp.save('Web/' + str(current_time) + str(counter) + ".png")
+            counter += 1
