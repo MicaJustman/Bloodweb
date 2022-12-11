@@ -143,7 +143,7 @@ if mode == 0:
             fuchsia = (255, 0, 128)  # Transparency color
             blue = (0, 0, 255)
             green = (0, 255, 0)
-            red = (255, 0, 0)
+            red = (255, 255, 255)
 
             # Create layered window
             hwnd = pygame.display.get_wm_info()["window"]
@@ -157,14 +157,14 @@ if mode == 0:
 
             for x in range(30):
                 if nodes[x] == 0:
-                    pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 40, webIndex[x][1] - 40, 80, 80), 0, 360, 5)
+                    pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
                 elif nodes[x] == 1:
-                    pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 40, webIndex[x][1] - 40, 80, 80), 0, 360, 5)
+                    pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
                 else:
-                    pygame.draw.arc(screen, red, pygame.Rect(webIndex[x][0] - 40, webIndex[x][1] - 40, 80, 80), 0, 360, 5)
+                    pygame.draw.arc(screen, red, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
 
             pygame.display.update()
-            sleep(5)
+            sleep(30)
             exit(0)
 
 elif mode == 1:
