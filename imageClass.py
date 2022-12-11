@@ -3,46 +3,20 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision
-from torch.utils.data import Dataset, DataLoader
-import pandas
-import PIL.Image
-import os
+from torch.utils.data import DataLoader
 
-num_Classes = 2
 learning_rate = 1e-3
 batch_size = 32
-num_epochs = 2
+num_epochs = 3
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-class nodes(Dataset):
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
-        self.img_labels = pandas.read_csv(annotations_file)
-        self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
-
-    def __len__(self):
-        return len(self.img_labels)
-
-    def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = PIL.Image.open(img_path)
-        label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return image, label
-
 
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize([.5], [.5])
 ])
 
-
-train_set = torchvision.datasets.ImageFolder(root='C:/Users/mica/PycharmProjects/BloodWeb/train', transform=transform)
+train_set = torchvision.datasets.ImageFolder(root='train', transform=transform)
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 
 model = torchvision.models.resnet18()
@@ -68,4 +42,4 @@ for epoch in range(num_epochs):
 
     print("Epoch:" + str(epoch) + "  loss:" + str(running_loss/train_set.__len__()) + "  Acc:" + str(total_correct/train_set.__len__()))
 
-torch.save(model.state_dict(), "C:/Users/mica/PycharmProjects/BloodWeb/Model.pth")
+torch.save(model.state_dict(), "Model.pth")
