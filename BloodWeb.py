@@ -13,7 +13,7 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 3  # mode 0 for predicting nodes, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 0  # mode 0 for predicting nodes, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
 mouse = Controller()
 halt = False
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -96,7 +96,6 @@ def recordWeb(key):
 
 # transform function for pytorch model
 transform = torchvision.transforms.Compose([
-    torchvision.transforms.Resize((80, 80)),
     torchvision.transforms.ToTensor(),
     torchvision.transforms.Normalize([.5], [.5])
 ])
@@ -110,13 +109,14 @@ if mode == 0:
     counter = 0
     images = []
     nodes = []
+    lines = []
 
     # creates the listner to stop the code
     listener = keyboard.Listener(on_press=on_press)
     print("Press any key to stop")
     listener.start()
 
-    # loads the model
+    # loads the node model
     NodeModel = torchvision.models.resnet18().to(device)
     NodeModel.load_state_dict(torch.load("NodeModel.pth"))
     NodeModel.eval()
@@ -161,6 +161,7 @@ if mode == 0:
                 pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 40, webIndex[x][1] - 40, 80, 80), 0, 360, 5)
             else:
                 pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 40, webIndex[x][1] - 40, 80, 80), 0, 360, 5)
+
         pygame.display.update()
 
 elif mode == 1:
@@ -210,66 +211,3 @@ elif mode == 2:
         temp = fromarray(img[x[1] - 40:x[1] + 40, x[0] - 40:x[0] + 40])
         temp.save('Web/' + str(current_time) + str(counter) + ".png")
         counter += 1
-
-elif mode == 3:
-    nodes = []
-    time_now = datetime.now()
-    current_time = time_now.strftime("%H%M%S")
-    counter = 0
-
-    yTop = 0
-    yBottom = 0
-    yLeft = 0
-    yRight = 0
-
-    # clears web directory
-    for f in os.listdir('Web'):
-        os.remove(os.path.join('web', f))
-
-    # loads the model
-    NodeModel = torchvision.models.resnet18().to(device)
-    NodeModel.load_state_dict(torch.load("NodeModel.pth"))
-    NodeModel.eval()
-
-    # grabs the screen
-    img = grabImage(width, height, 0, 0, DBDhwnd)
-    fromarray(img).save("test.png")
-
-    # predicts each node location and outputs
-    for x in range(30):
-        temp = fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])
-        output = NodeModel(transform(temp).unsqueeze(0))
-        output_idx = torch.argmax(output)
-        nodes.append(output_idx)
-
-    for x in range(18):
-        for y in AdjecentDict[x]:
-            if nodes[x] == 1 and nodes[y] == 1:
-                yTop = webIndex[x][1] - 10
-                yBottom = webIndex[y][1] + 10
-                xLeft = webIndex[x][0] - 10
-                xRight = webIndex[y][0] + 10
-
-                if yTop > yBottom:
-                    temp = yTop + 20
-                    yTop = yBottom - 20
-                    yBottom = temp
-
-                if xLeft > xRight:
-                    temp = xLeft + 20
-                    xLeft = xRight - 20
-                    xRight = temp
-
-                if yBottom - yTop > 120:
-                    yTop += 15
-                    yBottom -= 15
-                if xRight - xLeft > 120:
-                    xLeft += 15
-                    xRight -= 15
-
-                print(str(x) + '--' + str(y))
-                print('(' + str(yTop) + ',' + str(xLeft) + ')---(' + str(yBottom) + ',' + str(xRight) + ')')
-
-                temp = fromarray(img[yTop:yBottom, xLeft:xRight])
-                temp.save('Web/' + str(x) + '--' + str(y) + ".png")
-                counter += 1
