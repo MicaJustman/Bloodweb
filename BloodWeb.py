@@ -1,8 +1,7 @@
 import os
 from time import sleep
-
 import pygame
-from PIL.Image import frombuffer, fromarray
+from PIL.Image import frombuffer, fromarray, open as PILopen
 from numpy import asarray
 from pynput import keyboard
 from pynput.mouse import Controller
@@ -15,7 +14,7 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 3  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 4  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 display = 1 # display 1 for show predictions
 mouse = Controller()
@@ -62,7 +61,7 @@ LineCoordsDict = {
     13:[(583, 845), (504, 818)],
     14:[(449, 795), (388, 733)],
     15:[(364, 683), (340, 605)],
-    16:[(348, 549), (381, 477)],
+    16:[(348, 549), (366, 477)],
     17:[(390, 424), (451, 365)],
 }
 
@@ -288,8 +287,28 @@ elif mode == 4:
     fromarray(img).save("test.png")
 
     # saves the line pics for addition to the machine learning folders
-    for x in LineCoordsDict:
+    '''for x in LineCoordsDict:
         for y in LineCoordsDict[x]:
             temp = fromarray(img[y[1] - 10:y[1] + 10, y[0] - 10:y[0] + 10])
-            temp.save('Web/' + str(current_time) + str(counter) + ".png")
+            temp.save('Web/' + str(counter) + ".png")
+            counter += 1'''
+
+    # loads the node model
+    LineModel = torchvision.models.resnet18().to(device)
+    LineModel.load_state_dict(torch.load("LineModel.pth"))
+    LineModel.eval()
+
+    temp = PILopen('LineTrain/Line/1.png')
+    output = LineModel(transform(temp).unsqueeze(0))
+    output_idx = torch.argmax(output)
+    print(output_idx)
+
+
+    '''for x in LineCoordsDict:
+        for y in LineCoordsDict[x]:
+            temp = fromarray(img[y[1] - 10:y[1] + 10, y[0] - 10:y[0] + 10])
+            temp.save("Web/" + str(counter) + ".png")
             counter += 1
+            output = LineModel(transform(temp).unsqueeze(0))
+            output_idx = torch.argmax(output)
+            print(output_idx)'''
