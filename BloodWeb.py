@@ -1,5 +1,7 @@
 import os
 from time import sleep
+
+import imagehash
 import pygame
 from PIL.Image import frombuffer, fromarray, open as PILopen
 from numpy import asarray
@@ -14,7 +16,7 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 4  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 display = 1 # display 1 for show predictions
 mouse = Controller()
@@ -45,25 +47,82 @@ AdjecentDict = {
 
 #line coords for node adj list
 LineCoordsDict = {
-    0:[(563, 458), (584, 424), (635, 425), (657, 456)],
-    1:[(693, 474), (736, 476), (759, 524), (743, 557)],
-    2:[(743, 600), (755, 633), (735, 677), (694, 682)],
-    3:[(662, 705), (635, 733), (584, 738), (559, 704)],
-    4:[(528, 682), (483, 680), (457, 633), (478, 600)],
-    5:[(477, 559), (463, 522), (485, 477), (529, 476)],
-    6:[(506, 338), (583, 317)],
-    7:[(638, 313), (718, 337)],
-    8:[(771, 363), (828, 424)],
-    9:[(860, 474), (875, 548)],
-    10:[(884, 604), (859, 687)],
-    11:[(830, 733), (772, 793)],
-    12:[(721, 820), (639, 843)],
-    13:[(583, 845), (504, 818)],
-    14:[(449, 795), (388, 733)],
-    15:[(364, 683), (340, 605)],
-    16:[(348, 549), (366, 477)],
-    17:[(390, 424), (451, 365)],
+    '0-17': (563, 458),
+    '0-6': (584, 424),
+    '0-7': (635, 425),
+    '0-8': (657, 456),
+    '1-7': (693, 474),
+    '1-8': (736, 476),
+    '1-9': (759, 524),
+    '1-10': (743, 557),
+    '2-9': (743, 600),
+    '2-10': (755, 633),
+    '2-11': (735, 677),
+    '2-12': (694, 682),
+    '3-11': (662, 705),
+    '3-12': (635, 733),
+    '3-13': (584, 738),
+    '3-14': (559, 704),
+    '4-13': (528, 682),
+    '4-14': (483, 680),
+    '4-15': (457, 633),
+    '4-16': (478, 600),
+    '5-15': (477, 559),
+    '5-16': (463, 522),
+    '5-17': (485, 477),
+    '5-6': (529, 476),
+    '6-18': (506, 338),
+    '6-19': (583, 317),
+    '7-19': (638, 313),
+    '7-20': (718, 337),
+    '8-20': (771, 363),
+    '8-21': (828, 424),
+    '9-21': (860, 474),
+    '9-22': (875, 548),
+    '10-22': (884, 604),
+    '10-23': (859, 687),
+    '11-23': (830, 733),
+    '11-24': (772, 793),
+    '12-24': (721, 820),
+    '12-25': (639, 843),
+    '13-25': (583, 845),
+    '13-26': (504, 818),
+    '14-26': (449, 795),
+    '14-27': (388, 733),
+    '15-27': (364, 683),
+    '15-28': (340, 605),
+    '16-28': (348, 549),
+    '16-29': (366, 477),
+    '17-29': (390, 424),
+    '17-18': (451, 365),
 }
+
+#hashes of every node connection
+LineHashes = {'0-17': ['1f03f01ec0f8deee', '01c0f83f03000000'], '0-6': ['279393c9cde4f6f2', '303019180c048683'],
+              '0-7': ['e6e4c9d993b3676f', '060c0c1818307060'], '0-8': ['fef0833ef8811e79', '0000033ff8c00000'],
+              '1-7': ['b39393d3dbcbcdcd', '3030181818180c0c'], '1-8': ['f2a6ecc99bb3676f', '07060c1c18307060'],
+              '1-9': ['ffff00ff6000ffff', '000000ffff000000'], '1-10': ['0fc77038cce673b9', '80c070381c0e0301'],
+              '2-9': ['f9f3e6cc1870e480', '0103061c3870e0c0'], '2-10': ['80f900e0ff0000ff', '000000dfff000000'],
+              '2-11': ['c861203098c8cc66', 'c060603018180c06'], '2-12': ['0c1919d898901030', '0c18181818303030'],
+              '3-11': ['3a83f07f03e0b8cc', '0080f07f0f000000'], '3-12': ['6535b098c9ece4f6', '60303018180c0e06'],
+              '3-13': ['e6cccd999333276f', '060c0c1818307060'], '3-14': ['fff0031ff8811f7f', '0000073ff8c00000'],
+              '4-13': ['b393dad9c9c9cded', '3030181818080c0c'], '4-14': ['f9f3f2e4ccc89131', '010306060c181830'],
+              '4-15': ['ffff0000ff0000ff', '000000e0ff000000'], '4-16': ['9fc662319cc6e3f9', '80e070381c0e0301'],
+              '5-15': ['f3e7ce8c3160c89e', '03070e1c3060c080'], '5-16': ['fffb0000ff0000ff', '00000000ff000000'],
+              '5-17': ['6727939bc9ece6f2', '603030180c0c0603'], '5-6': ['c9dbdb9393b7b727', '0818181810303030'],
+              '6-18': ['3f9fc7311cc6e3f8', '0180e0701c0f0300'], '6-19': ['e4ccc993b327676f', '0c0c181830306060'],
+              '7-19': ['6727b393d9c9c4e6', '60303018180c0c06'], '7-20': ['fcf1e78c38e3cf1f', '0001071e38e0c000'],
+              '8-20': ['c9c9c9c9c9c9c9c9', '1818181818181818'], '8-21': ['ff0000ff0000ffff', '000000ffff000000'],
+              '9-21': ['e6cc091b33266fcf', '060c1818307060c0'], '9-22': ['3e86e3781e070100', '0080e0781e070100'],
+              '10-22': ['fef8e38f38e18700', '0001030f3cf0c000'], '10-23': ['303018180c060603', '7030181c0c060603'],
+              '11-23': ['00000000ff81003c', '00000000ffff0000'], '11-24': ['1819db181a1a1818', '1818181818181818'],
+              '12-24': ['0000c0e0388e4701', '0000c0f0381e0701'], '12-25': ['e6ecccd893302060', '060c0c1818303060'],
+              '13-25': ['20b190d8c86c6636', '303018180c0c0606'], '13-26': ['fe98d1c71c30e080', '000003071c78e0c0'],
+              '14-26': ['dbdbdbdbdbdb9bdb', '1818181818181818'], '14-27': ['ffdf0000ff0000ff', '00000000fffe0000'],
+              '15-27': ['e6eccdd99333674f', '060c0c18303060e0'], '15-28': ['7f1fc7711c87e1f8', '0100c0f03c0f0300'],
+              '16-28': ['f8e38f38e1871f7f', '00030f3cf0c00000'], '16-29': ['4f6727b39bc9cce4', 'c0603030181c0c06'],
+              '17-29': ['ff0000ff0000ffff', '000000ffff000000'], '17-18': ['9393939393939393', '3030101010101010']}
+
 
 # monitor coords of each node spot
 webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
@@ -136,8 +195,8 @@ width = size[2]
 height = size[3]
 
 if mode == 0:
-    images = []
     nodes = []
+    lines = {}
 
     # creates the listner to stop the code
     listener = keyboard.Listener(on_press=on_press)
@@ -160,6 +219,18 @@ if mode == 0:
             output = NodeModel(transform(temp).unsqueeze(0))
             output_idx = torch.argmax(output)
             nodes.append(output_idx)
+
+        for x in AdjecentDict:
+            for y in AdjecentDict[x]:
+                coord = LineCoordsDict[str(x) + '-' + str(y)]
+                Gray = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][0])
+                Gold = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][1])
+                temp = imagehash.average_hash(fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]))
+
+                if abs(temp - Gray) < 15 or abs(temp - Gold) < 15:
+                    lines[str(x) + '-' + str(y)] = 1
+                else:
+                    lines[str(x) + '-' + str(y)] = 0
 
         #displays the prediction
         if display:
@@ -190,6 +261,14 @@ if mode == 0:
                     pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
                 else:
                     pygame.draw.arc(screen, white, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
+
+            for x in AdjecentDict:
+                for y in AdjecentDict[x]:
+                    coord = LineCoordsDict[str(x) + '-' + str(y)]
+                    if lines[str(x) + '-' + str(y)] == 1:
+                        pygame.draw.circle(screen, green, (coord[0], coord[1]), 5)
+                    else:
+                        pygame.draw.circle(screen, blue, (coord[0], coord[1]), 5)
 
             pygame.display.update()
             sleep(30)
@@ -271,14 +350,17 @@ elif mode == 3:
 
         screen.fill(fuchsia)  # Transparent background
 
-        for x in LineCoordsDict:
-            for y in LineCoordsDict[x]:
-                pygame.draw.rect(screen, blue, pygame.Rect(y[0] - 10, y[1] - 10, 20, 20), 1)
+        for x in AdjecentDict:
+            for y in AdjecentDict[x]:
+                coord = LineCoordsDict[str(x) + '-' + str(y)]
+                pygame.draw.rect(screen, blue, pygame.Rect(coord[0] - 10, coord[1] - 10, 20, 20), 1)
 
         pygame.display.update()
 
 elif mode == 4:
     counter = 0
+    hashes = {}
+
     time_now = datetime.now()
     current_time = time_now.strftime("%H%M%S")
 
@@ -287,28 +369,16 @@ elif mode == 4:
     fromarray(img).save("test.png")
 
     # saves the line pics for addition to the machine learning folders
-    '''for x in LineCoordsDict:
-        for y in LineCoordsDict[x]:
-            temp = fromarray(img[y[1] - 10:y[1] + 10, y[0] - 10:y[0] + 10])
-            temp.save('Web/' + str(counter) + ".png")
+    '''for x in AdjecentDict:
+        for y in AdjecentDict[x]:
+            coord = LineCoordsDict[str(x) + '-' + str(y)]
+            temp = fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10])
+            temp.save('Web/' + str(current_time) + str(counter) + ".png")
             counter += 1'''
 
-    # loads the node model
-    LineModel = torchvision.models.resnet18().to(device)
-    LineModel.load_state_dict(torch.load("LineModel.pth"))
-    LineModel.eval()
-
-    temp = PILopen('LineTrain/Line/1.png')
-    output = LineModel(transform(temp).unsqueeze(0))
-    output_idx = torch.argmax(output)
-    print(output_idx)
-
-
-    '''for x in LineCoordsDict:
-        for y in LineCoordsDict[x]:
-            temp = fromarray(img[y[1] - 10:y[1] + 10, y[0] - 10:y[0] + 10])
-            temp.save("Web/" + str(counter) + ".png")
+    #prints image hash for the dict
+    for x in AdjecentDict:
+        for y in AdjecentDict[x]:
+            hashes[str(x) + '-' + str(y)] = [str(imagehash.average_hash(PILopen('Line/GrayLines/' + str(counter) + '.png'))), str(imagehash.average_hash(PILopen('Line/GoldLines/' + str(counter) + '.png')))]
             counter += 1
-            output = LineModel(transform(temp).unsqueeze(0))
-            output_idx = torch.argmax(output)
-            print(output_idx)'''
+    print(hashes)

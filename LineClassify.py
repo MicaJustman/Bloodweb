@@ -16,7 +16,7 @@ transform = transforms.Compose([
     transforms.Normalize([.5], [.5])
 ])
 
-train_set = torchvision.datasets.ImageFolder(root='LineTrain', transform=transform)
+train_set = torchvision.datasets.ImageFolder(root='Line', transform=transform)
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 
 model = torchvision.models.resnet18()
