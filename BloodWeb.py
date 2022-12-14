@@ -1,6 +1,4 @@
-import os
 from time import sleep
-
 import imagehash
 import pygame
 from PIL.Image import frombuffer, fromarray, open as PILopen
@@ -8,7 +6,7 @@ from numpy import asarray
 from pynput import keyboard
 from pynput.mouse import Controller
 from win32api import RGB
-from win32con import SRCCOPY, GWL_EXSTYLE, WS_EX_LAYERED, HWND_TOP, LWA_COLORKEY, SWP_NOSIZE
+from win32con import SRCCOPY, GWL_EXSTYLE, WS_EX_LAYERED, HWND_TOP, LWA_COLORKEY, SWP_NOSIZE, LWA_ALPHA
 from win32gui import IsWindowVisible, GetWindowText, GetWindowDC, ReleaseDC, DeleteObject, EnumWindows, GetWindowRect, SetWindowLong, GetWindowLong, SetLayeredWindowAttributes, SetWindowPos
 from win32ui import CreateDCFromHandle, CreateBitmap
 from datetime import datetime
@@ -18,10 +16,36 @@ import torchvision
 DBDhwnd = None
 mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
-display = 1 # display 1 for show predictions
 mouse = Controller()
-halt = False
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+class treeNode:
+    def __init__(self, number, hash):
+        self.number = number
+        self.hash = hash
+        self.children = []
+        self.parent = None
+
+    def addNode(self, node):
+        node.parent = self
+        self.children.append(node)
+
+    def listNodes(self):
+        nodes = [self.number]
+
+        for x in self.children:
+            nodes.append(x.number)
+
+            for y in x.children:
+                nodes.append(y.number)
+
+        return nodes
+
+    def __str__(self):
+        return "value % s ---- children %s" % (self.number, self.children)
+
+    def __repr__(self):
+        return str(self)
 
 # node adj list for ordering nodes
 AdjecentDict = {
@@ -134,8 +158,7 @@ webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
 
 # stops the code
 def on_press(key):
-    global halt
-    halt = True
+    exit(0)
 
 
 # finds the dbd window handle
@@ -194,10 +217,81 @@ size = GetWindowRect(DBDhwnd)
 width = size[2]
 height = size[3]
 
-if mode == 0:
-    nodes = []
-    lines = {}
 
+# displays the prediction
+def displayBasic():
+    # pygame init display
+    pygame.init()
+    screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
+    Black = (0, 0, 0)  # Transparency color
+    blue = (0, 0, 255)
+    green = (0, 255, 0)
+    white = (255, 255, 255)
+
+    # Create layered window
+    hwnd = pygame.display.get_wm_info()["window"]
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
+
+    # Set window transparency color
+    SetLayeredWindowAttributes(hwnd, RGB(*Black), 100, LWA_ALPHA)
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
+
+    screen.fill(Black)  # Transparent background
+
+    for x in range(30):
+        if nodes[x] == 1 or nodes[x] == 0:
+            pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
+        elif nodes[x] == 2:
+            pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
+        else:
+            pygame.draw.arc(screen, white, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
+
+    for x in AdjecentDict:
+        for y in AdjecentDict[x]:
+            coord = LineCoordsDict[str(x) + '-' + str(y)]
+            if lines[str(x) + '-' + str(y)] == 1:
+                pygame.draw.circle(screen, green, (coord[0], coord[1]), 5)
+            else:
+                pygame.draw.circle(screen, blue, (coord[0], coord[1]), 5)
+
+    pygame.display.update()
+    sleep(60)
+    exit(0)
+
+def displayTrees():
+    # pygame init display
+    pygame.init()
+    screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
+    Black = (0, 0, 0)  # Transparency color
+    colors = [(0, 0, 255), (0, 255, 0), (255, 0, 255), (255, 255, 0), (255, 100, 0), (255, 255, 255)]
+
+    # Create layered window
+    hwnd = pygame.display.get_wm_info()["window"]
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
+
+    # Set window transparency color
+    SetLayeredWindowAttributes(hwnd, RGB(*Black), 100, LWA_ALPHA)
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
+
+    screen.fill(Black)  # Transparent background
+
+    count = 0
+    for x in trees:
+        for b in x.children:
+            pygame.draw.line(screen, colors[count], webIndex[x.number], webIndex[b.number], width = 6)
+            for c in b.children:
+                pygame.draw.line(screen, colors[count], webIndex[b.number], webIndex[c.number], width = 6)
+
+        for y in x.listNodes():
+            pygame.draw.arc(screen, colors[count], pygame.Rect(webIndex[y][0] - 44, webIndex[y][1] - 44, 88, 88), 0, 360, 8)
+        count += 1
+
+
+    pygame.display.update()
+    sleep(60)
+    exit(0)
+
+if mode == 0:
     # creates the listner to stop the code
     listener = keyboard.Listener(on_press=on_press)
     print("Press any key to stop")
@@ -209,6 +303,12 @@ if mode == 0:
     NodeModel.eval()
 
     while True:
+        nodes = []
+        lines = {}
+        base = [0, 1, 2, 3, 4, 5]
+        trees = []
+        visited = []
+
         # grabs the screen
         img = grabImage(width, height, 0, 0, DBDhwnd)
         fromarray(img).save("test.png")
@@ -227,52 +327,40 @@ if mode == 0:
                 Gold = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][1])
                 temp = imagehash.average_hash(fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]))
 
-                if abs(temp - Gray) < 15 or abs(temp - Gold) < 15:
+                if abs(temp - Gray) < 10 or abs(temp - Gold) < 10:
                     lines[str(x) + '-' + str(y)] = 1
                 else:
                     lines[str(x) + '-' + str(y)] = 0
 
-        #displays the prediction
-        if display:
-            # pygame init display
-            pygame.init()
-            screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
-            done = False
-            fuchsia = (255, 0, 128)  # Transparency color
-            blue = (0, 0, 255)
-            green = (0, 255, 0)
-            white = (255, 255, 255)
-            cyan = (0, 255, 255)
+        for x in base:
+            if nodes[x] == 2 or nodes[x] == 3:
+                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])))
+                rootNode = treeNode(x, imagehash)
 
-            # Create layered window
-            hwnd = pygame.display.get_wm_info()["window"]
-            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
-
-            # Set window transparency color
-            SetLayeredWindowAttributes(hwnd, RGB(*fuchsia), 0, LWA_COLORKEY)
-            SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
-
-            screen.fill(fuchsia)  # Transparent background
-
-            for x in range(30):
-                if nodes[x] == 1 or nodes[x] == 0:
-                    pygame.draw.arc(screen, blue, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
-                elif nodes[x] == 2:
-                    pygame.draw.arc(screen, green, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
-                else:
-                    pygame.draw.arc(screen, white, pygame.Rect(webIndex[x][0] - 44, webIndex[x][1] - 44, 88, 88), 0, 360, 8)
-
-            for x in AdjecentDict:
                 for y in AdjecentDict[x]:
-                    coord = LineCoordsDict[str(x) + '-' + str(y)]
-                    if lines[str(x) + '-' + str(y)] == 1:
-                        pygame.draw.circle(screen, green, (coord[0], coord[1]), 5)
-                    else:
-                        pygame.draw.circle(screen, blue, (coord[0], coord[1]), 5)
+                    if (nodes[y] == 2 or nodes[y] == 3) and (lines[str(x) + '-' + str(y)] == 1) and y not in visited:
+                        imgHash = str(imagehash.average_hash(fromarray(img[webIndex[y][1] - 40:webIndex[y][1] + 40, webIndex[y][0] - 40:webIndex[y][0] + 40])))
+                        midNode = treeNode(y, imgHash)
+                        rootNode.addNode(midNode)
+                        visited.append(y)
 
-            pygame.display.update()
-            sleep(30)
-            exit(0)
+                        for z in AdjecentDict[y]:
+                            if (nodes[z] == 2 or nodes[z] == 3) and (lines[str(y) + '-' + str(z)] == 1) and z not in visited:
+                                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[z][1] - 40:webIndex[z][1] + 40, webIndex[z][0] - 40:webIndex[z][0] + 40])))
+                                leafNode = treeNode(z, imgHash)
+                                midNode.addNode(leafNode)
+                                visited.append(z)
+
+                trees.append(rootNode)
+
+        for x in trees:
+            print(x.listNodes())
+
+        #Displays the nodes and graph lines
+        #displayBasic()
+
+        #Displays the trees
+        displayTrees()
 
 elif mode == 1:
     # uncomment this line and clear webIndex to record new indexes. Hit any key to store the location of the mouse
@@ -283,7 +371,7 @@ elif mode == 1:
     pygame.init()
     screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
     done = False
-    fuchsia = (255, 0, 128)  # Transparency color
+    Black = (0, 0, 0)  # Transparency color
     blue = (0, 0, 255)
 
     # Create layered window
@@ -291,7 +379,7 @@ elif mode == 1:
     SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
 
     # Set window transparency color
-    SetLayeredWindowAttributes(hwnd, RGB(*fuchsia), 0, LWA_COLORKEY)
+    SetLayeredWindowAttributes(hwnd, RGB(*Black), 100, LWA_ALPHA)
     SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
 
     # draws the nodes in color
@@ -300,7 +388,7 @@ elif mode == 1:
             if event.type == pygame.QUIT:
                 done = True
 
-        screen.fill(fuchsia)  # Transparent background
+        screen.fill(Black)  # Transparent background
 
         for x in webIndex:
             pygame.draw.circle(screen, blue, (x[0], x[1]), 36)
@@ -331,7 +419,7 @@ elif mode == 3:
     pygame.init()
     screen = pygame.display.set_mode((width, height), pygame.NOFRAME)
     done = False
-    fuchsia = (255, 0, 128)  # Transparency color
+    Black = (0, 0, 0)  # Transparency color
     blue = (255, 255, 255)
 
     # Create layered window
@@ -339,7 +427,7 @@ elif mode == 3:
     SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED)
 
     # Set window transparency color
-    SetLayeredWindowAttributes(hwnd, RGB(*fuchsia), 0, LWA_COLORKEY)
+    SetLayeredWindowAttributes(hwnd, RGB(*Black), 100, LWA_ALPHA)
     SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_NOSIZE)
 
     # draws the boxes in color
@@ -348,7 +436,7 @@ elif mode == 3:
             if event.type == pygame.QUIT:
                 done = True
 
-        screen.fill(fuchsia)  # Transparent background
+        screen.fill(Black)  # Transparent background
 
         for x in AdjecentDict:
             for y in AdjecentDict[x]:
