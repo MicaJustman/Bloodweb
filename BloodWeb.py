@@ -14,7 +14,8 @@ from win32ui import CreateDCFromHandle, CreateBitmap
 from datetime import datetime
 import torch
 import torchvision
-import cv2
+from SiameseClassify import SiameseNetwork
+import torch.nn.functional as F
 
 character = "Executioner"
 mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
@@ -245,6 +246,11 @@ transform = torchvision.transforms.Compose([
     torchvision.transforms.Normalize([.5], [.5])
 ])
 
+transformLine = torchvision.transforms.Compose([
+    torchvision.transforms.Resize((100, 100)),
+    torchvision.transforms.ToTensor()
+])
+
 EnumWindows(winEnumHandler, None)
 size = GetWindowRect(DBDhwnd)
 width = size[2]
@@ -348,6 +354,11 @@ if mode == 0:
     NodeModel.load_state_dict(torch.load("NodeModel.pth"))
     NodeModel.eval()
 
+    # loads the line model
+    LineModel = SiameseNetwork().to(device)
+    LineModel.load_state_dict(torch.load("LineModel.pth"))
+    LineModel.eval()
+
     #loads priority hashes
     for x in range(1, 10):
         try:
@@ -382,14 +393,16 @@ if mode == 0:
             nodes.append(output_idx)
 
         #id the graph lines
+        saved = transformLine(PILopen('Line/Lines/0.png').convert("L")).to(device)
         for x in AdjecentDict:
             for y in AdjecentDict[x]:
                 coord = LineCoordsDict[str(x) + '-' + str(y)]
-                Gray = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][0])
-                Gold = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][1])
-                temp = imagehash.average_hash(fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]))
+                temp = transformLine(fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]).convert("L")).to(device)
 
-                if abs(temp - Gray) < 13 or abs(temp - Gold) < 13:
+                output1, output2 = LineModel(saved.unsqueeze(0), temp.unsqueeze(0))
+                euclidean_distance = F.pairwise_distance(output1, output2)
+
+                if euclidean_distance < .5:
                     lines[str(x) + '-' + str(y)] = 1
                 else:
                     lines[str(x) + '-' + str(y)] = 0
@@ -430,9 +443,7 @@ if mode == 0:
                                 visited.append(z)
 
                 trees.append(rootNode)
-
-        for x in trees:
-            print(x.search(hashes))
+        print(trees)
 
         '''for x in trees:
             print(x.listNodes())
@@ -457,7 +468,7 @@ if mode == 0:
         #displayBasic()
 
         #Displays the trees
-        #displayTrees()
+        displayTrees()
         exit(1)
 
 elif mode == 1:
