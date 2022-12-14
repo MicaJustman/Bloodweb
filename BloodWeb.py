@@ -14,10 +14,13 @@ from win32ui import CreateDCFromHandle, CreateBitmap
 from datetime import datetime
 import torch
 import torchvision
+import cv2
+
+character = "Executioner"
+mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+          # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 
 DBDhwnd = None
-mode = 2  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
-          # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 mouse = Controller()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 halt = False
@@ -44,8 +47,34 @@ class treeNode:
 
         return nodes
 
+    def search(self, hash):
+        path = []
+        for y in hash:
+            stack = [self]
+
+            while len(stack) != 0:
+                current = stack.pop(0)
+
+                for x in current.children:
+                    stack.append(x)
+
+                dif = abs(imagehash.hex_to_hash(current.hash) - imagehash.hex_to_hash(y))
+                if dif < 25:
+                    if current.number not in path:
+                        path.append(current.number)
+                    if current.parent is not None:
+                        if current.parent.number not in path:
+                            path.append(current.parent.number)
+                        if current.parent.parent is not None:
+                            if current.parent.parent.number not in path:
+                                path.append(current.parent.parent.number)
+
+        return path
+
+
+
     def __str__(self):
-        return "value % s ---- children %s" % (self.number, self.children)
+        return "value % s --- hash %s --- children %s" % (self.number, self.hash, self.children)
 
     def __repr__(self):
         return str(self)
@@ -307,6 +336,8 @@ def mouseControl(x, y):
     sleep(.2)
 
 if mode == 0:
+    hashes = []
+
     # creates the listner to stop the code
     listener = keyboard.Listener(on_press=on_press)
     print("Press any key to stop")
@@ -316,6 +347,19 @@ if mode == 0:
     NodeModel = torchvision.models.resnet18().to(device)
     NodeModel.load_state_dict(torch.load("NodeModel.pth"))
     NodeModel.eval()
+
+    #loads priority hashes
+    for x in range(1, 10):
+        try:
+            hashes.append(str(imagehash.average_hash(PILopen('Priority/' + str(x) + '.png'), hash_size=16)))
+        except:
+            pass
+
+    for x in range(1, 10):
+        try:
+            hashes.append(str(imagehash.average_hash(PILopen('Priority/' + character + '/' + str(x) + '.png'), hash_size=16)))
+        except:
+            pass
 
     while True:
         nodes = []
@@ -368,19 +412,19 @@ if mode == 0:
         #creates the trees
         for x in baseOpt:
             if nodes[x] == 2 or nodes[x] == 3:
-                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])))
-                rootNode = treeNode(x, imagehash)
+                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40]), hash_size=16))
+                rootNode = treeNode(x, imgHash)
 
                 for y in AdjecentDict[x]:
                     if (nodes[y] == 2 or nodes[y] == 3) and (lines[str(x) + '-' + str(y)] == 1) and y not in visited:
-                        imgHash = str(imagehash.average_hash(fromarray(img[webIndex[y][1] - 40:webIndex[y][1] + 40, webIndex[y][0] - 40:webIndex[y][0] + 40])))
+                        imgHash = str(imagehash.average_hash(fromarray(img[webIndex[y][1] - 40:webIndex[y][1] + 40, webIndex[y][0] - 40:webIndex[y][0] + 40]), hash_size=16))
                         midNode = treeNode(y, imgHash)
                         rootNode.addNode(midNode)
                         visited.append(y)
 
                         for z in AdjecentDict[y]:
                             if (nodes[z] == 2 or nodes[z] == 3) and (lines[str(y) + '-' + str(z)] == 1) and z not in visited:
-                                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[z][1] - 40:webIndex[z][1] + 40, webIndex[z][0] - 40:webIndex[z][0] + 40])))
+                                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[z][1] - 40:webIndex[z][1] + 40, webIndex[z][0] - 40:webIndex[z][0] + 40]), hash_size=16))
                                 leafNode = treeNode(z, imgHash)
                                 midNode.addNode(leafNode)
                                 visited.append(z)
@@ -388,6 +432,9 @@ if mode == 0:
                 trees.append(rootNode)
 
         for x in trees:
+            print(x.search(hashes))
+
+        '''for x in trees:
             print(x.listNodes())
             for y in x.listNodes():
                 finalOrder.append(y)
@@ -403,7 +450,7 @@ if mode == 0:
         sleep(.1)
         mouse.press(Button.left)
         sleep(8)
-        mouse.release(Button.left)
+        mouse.release(Button.left)'''
 
 
         #Displays the nodes and graph lines
@@ -411,6 +458,7 @@ if mode == 0:
 
         #Displays the trees
         #displayTrees()
+        exit(1)
 
 elif mode == 1:
     # uncomment this line and clear webIndex to record new indexes. Hit any key to store the location of the mouse
