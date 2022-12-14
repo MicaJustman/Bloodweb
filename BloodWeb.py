@@ -14,11 +14,11 @@ from win32ui import CreateDCFromHandle, CreateBitmap
 from datetime import datetime
 import torch
 import torchvision
-from SiameseClassify import SiameseNetwork
+from LineClassify import SiameseNetwork
 import torch.nn.functional as F
 
 character = "Executioner"
-mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 2  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 
 DBDhwnd = None
