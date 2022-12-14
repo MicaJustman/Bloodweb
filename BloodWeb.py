@@ -1,3 +1,4 @@
+from operator import itemgetter
 from time import sleep
 import imagehash
 import pygame
@@ -255,7 +256,7 @@ def displayBasic():
                 pygame.draw.circle(screen, blue, (coord[0], coord[1]), 5)
 
     pygame.display.update()
-    sleep(60)
+    sleep(360)
     exit(0)
 
 def displayTrees():
@@ -288,7 +289,7 @@ def displayTrees():
 
 
     pygame.display.update()
-    sleep(60)
+    sleep(360)
     exit(0)
 
 if mode == 0:
@@ -306,6 +307,8 @@ if mode == 0:
         nodes = []
         lines = {}
         base = [0, 1, 2, 3, 4, 5]
+        baseOpt = []
+        order = []
         trees = []
         visited = []
 
@@ -320,6 +323,7 @@ if mode == 0:
             output_idx = torch.argmax(output)
             nodes.append(output_idx)
 
+        #id the graph lines
         for x in AdjecentDict:
             for y in AdjecentDict[x]:
                 coord = LineCoordsDict[str(x) + '-' + str(y)]
@@ -332,7 +336,23 @@ if mode == 0:
                 else:
                     lines[str(x) + '-' + str(y)] = 0
 
+        #sort tree roots based on connection number
         for x in base:
+            count = 0
+
+            for y in AdjecentDict[x]:
+                if (nodes[y] == 2 or nodes[y] == 3) and (lines[str(x) + '-' + str(y)] == 1):
+                    count += 1
+
+            order.append([x, count])
+
+        order.sort(key=itemgetter(1), reverse=True)
+
+        for x in order:
+            baseOpt.append(x[0])
+
+        #creates the trees
+        for x in baseOpt:
             if nodes[x] == 2 or nodes[x] == 3:
                 imgHash = str(imagehash.average_hash(fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])))
                 rootNode = treeNode(x, imagehash)
