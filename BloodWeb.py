@@ -1,3 +1,4 @@
+import sys
 from operator import itemgetter
 from time import sleep
 import imagehash
@@ -5,7 +6,7 @@ import pygame
 from PIL.Image import frombuffer, fromarray, open as PILopen
 from numpy import asarray
 from pynput import keyboard
-from pynput.mouse import Controller
+from pynput.mouse import Controller, Button
 from win32api import RGB
 from win32con import SRCCOPY, GWL_EXSTYLE, WS_EX_LAYERED, HWND_TOP, LWA_COLORKEY, SWP_NOSIZE, LWA_ALPHA
 from win32gui import IsWindowVisible, GetWindowText, GetWindowDC, ReleaseDC, DeleteObject, EnumWindows, GetWindowRect, SetWindowLong, GetWindowLong, SetLayeredWindowAttributes, SetWindowPos
@@ -15,10 +16,11 @@ import torch
 import torchvision
 
 DBDhwnd = None
-mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 2  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 mouse = Controller()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+halt = False
 
 class treeNode:
     def __init__(self, number, hash):
@@ -159,7 +161,8 @@ webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
 
 # stops the code
 def on_press(key):
-    exit(0)
+    global halt
+    halt = True
 
 
 # finds the dbd window handle
@@ -292,6 +295,17 @@ def displayTrees():
     sleep(360)
     exit(0)
 
+#mouse controll
+def mouseControl(x, y):
+    temp = mouse.position
+    dif = (x - temp[0], y - temp[1])
+    mouse.move(dif[0], dif[1])
+    sleep(.4)
+    mouse.press(Button.left)
+    sleep(.6)
+    mouse.release(Button.left)
+    sleep(.2)
+
 if mode == 0:
     # creates the listner to stop the code
     listener = keyboard.Listener(on_press=on_press)
@@ -311,10 +325,10 @@ if mode == 0:
         order = []
         trees = []
         visited = []
+        finalOrder = []
 
         # grabs the screen
         img = grabImage(width, height, 0, 0, DBDhwnd)
-        fromarray(img).save("test.png")
 
         # predicts each node location and outputs
         for x in range(30):
@@ -331,7 +345,7 @@ if mode == 0:
                 Gold = imagehash.hex_to_hash(LineHashes[str(x) + '-' + str(y)][1])
                 temp = imagehash.average_hash(fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]))
 
-                if abs(temp - Gray) < 10 or abs(temp - Gold) < 10:
+                if abs(temp - Gray) < 13 or abs(temp - Gold) < 13:
                     lines[str(x) + '-' + str(y)] = 1
                 else:
                     lines[str(x) + '-' + str(y)] = 0
@@ -375,12 +389,28 @@ if mode == 0:
 
         for x in trees:
             print(x.listNodes())
+            for y in x.listNodes():
+                finalOrder.append(y)
+
+        for x in finalOrder:
+                if halt:
+                    exit(1)
+                if nodes[x] == 2:
+                    mouseControl(webIndex[x][0], webIndex[x][1])
+
+        sleep(2)
+        mouse.position = (610, 570)
+        sleep(.1)
+        mouse.press(Button.left)
+        sleep(8)
+        mouse.release(Button.left)
+
 
         #Displays the nodes and graph lines
         #displayBasic()
 
         #Displays the trees
-        displayTrees()
+        #displayTrees()
 
 elif mode == 1:
     # uncomment this line and clear webIndex to record new indexes. Hit any key to store the location of the mouse
@@ -422,7 +452,6 @@ elif mode == 2:
 
     # grabs the screen
     img = grabImage(width, height, 0, 0, DBDhwnd)
-    fromarray(img).save("test.png")
 
     # saves the node pics for addition to the machine learning folders
     for x in webIndex:
@@ -474,7 +503,6 @@ elif mode == 4:
 
     # grabs the screen
     img = grabImage(width, height, 0, 0, DBDhwnd)
-    fromarray(img).save("test.png")
 
     # saves the line pics for addition to the machine learning folders
     '''for x in AdjecentDict:
