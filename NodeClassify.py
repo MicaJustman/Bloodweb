@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 learning_rate = 1e-3
 batch_size = 32
-num_epochs = 3
+num_epochs = 6
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

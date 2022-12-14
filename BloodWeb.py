@@ -72,8 +72,6 @@ class treeNode:
 
         return path
 
-
-
     def __str__(self):
         return "value % s --- hash %s --- children %s" % (self.number, self.hash, self.children)
 
@@ -154,33 +152,6 @@ LineCoordsDict = {
     '17-18': (451, 365),
 }
 
-#hashes of every node connection
-LineHashes = {'0-17': ['1f03f01ec0f8deee', '01c0f83f03000000'], '0-6': ['279393c9cde4f6f2', '303019180c048683'],
-              '0-7': ['e6e4c9d993b3676f', '060c0c1818307060'], '0-8': ['fef0833ef8811e79', '0000033ff8c00000'],
-              '1-7': ['b39393d3dbcbcdcd', '3030181818180c0c'], '1-8': ['f2a6ecc99bb3676f', '07060c1c18307060'],
-              '1-9': ['ffff00ff6000ffff', '000000ffff000000'], '1-10': ['0fc77038cce673b9', '80c070381c0e0301'],
-              '2-9': ['f9f3e6cc1870e480', '0103061c3870e0c0'], '2-10': ['80f900e0ff0000ff', '000000dfff000000'],
-              '2-11': ['c861203098c8cc66', 'c060603018180c06'], '2-12': ['0c1919d898901030', '0c18181818303030'],
-              '3-11': ['3a83f07f03e0b8cc', '0080f07f0f000000'], '3-12': ['6535b098c9ece4f6', '60303018180c0e06'],
-              '3-13': ['e6cccd999333276f', '060c0c1818307060'], '3-14': ['fff0031ff8811f7f', '0000073ff8c00000'],
-              '4-13': ['b393dad9c9c9cded', '3030181818080c0c'], '4-14': ['f9f3f2e4ccc89131', '010306060c181830'],
-              '4-15': ['ffff0000ff0000ff', '000000e0ff000000'], '4-16': ['9fc662319cc6e3f9', '80e070381c0e0301'],
-              '5-15': ['f3e7ce8c3160c89e', '03070e1c3060c080'], '5-16': ['fffb0000ff0000ff', '00000000ff000000'],
-              '5-17': ['6727939bc9ece6f2', '603030180c0c0603'], '5-6': ['c9dbdb9393b7b727', '0818181810303030'],
-              '6-18': ['3f9fc7311cc6e3f8', '0180e0701c0f0300'], '6-19': ['e4ccc993b327676f', '0c0c181830306060'],
-              '7-19': ['6727b393d9c9c4e6', '60303018180c0c06'], '7-20': ['fcf1e78c38e3cf1f', '0001071e38e0c000'],
-              '8-20': ['c9c9c9c9c9c9c9c9', '1818181818181818'], '8-21': ['ff0000ff0000ffff', '000000ffff000000'],
-              '9-21': ['e6cc091b33266fcf', '060c1818307060c0'], '9-22': ['3e86e3781e070100', '0080e0781e070100'],
-              '10-22': ['fef8e38f38e18700', '0001030f3cf0c000'], '10-23': ['303018180c060603', '7030181c0c060603'],
-              '11-23': ['00000000ff81003c', '00000000ffff0000'], '11-24': ['1819db181a1a1818', '1818181818181818'],
-              '12-24': ['0000c0e0388e4701', '0000c0f0381e0701'], '12-25': ['e6ecccd893302060', '060c0c1818303060'],
-              '13-25': ['20b190d8c86c6636', '303018180c0c0606'], '13-26': ['fe98d1c71c30e080', '000003071c78e0c0'],
-              '14-26': ['dbdbdbdbdbdb9bdb', '1818181818181818'], '14-27': ['ffdf0000ff0000ff', '00000000fffe0000'],
-              '15-27': ['e6eccdd99333674f', '060c0c18303060e0'], '15-28': ['7f1fc7711c87e1f8', '0100c0f03c0f0300'],
-              '16-28': ['f8e38f38e1871f7f', '00030f3cf0c00000'], '16-29': ['4f6727b39bc9cce4', 'c0603030181c0c06'],
-              '17-29': ['ff0000ff0000ffff', '000000ffff000000'], '17-18': ['9393939393939393', '3030101010101010']}
-
-
 # monitor coords of each node spot
 webIndex = [(610, 469), (705, 523), (706, 634), (611, 690), (516, 634),
             (516, 523), (555, 367), (666, 368), (771, 424), (828, 524),
@@ -194,14 +165,12 @@ def on_press(key):
     global halt
     halt = True
 
-
 # finds the dbd window handle
 def winEnumHandler(hwnd, ctx):
     if IsWindowVisible(hwnd):
         if str(GetWindowText(hwnd)) == 'DeadByDaylight  ':
             global DBDhwnd
             DBDhwnd = hwnd
-
 
 # grabs the screen
 def grabImage(width, height, offset_width, offset_height, DBDhwnd):
@@ -225,7 +194,6 @@ def grabImage(width, height, offset_width, offset_height, DBDhwnd):
     DeleteObject(dataBitMap.GetHandle())
     return img
 
-
 # records mouse coords on press and prints at 30
 def recordWeb(key):
     global webIndex
@@ -240,12 +208,13 @@ def recordLine(key):
     if len(lineIndex) == 48                                                :
         print(lineIndex)
 
-# transform function for pytorch model
+# transform function for node model
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
     torchvision.transforms.Normalize([.5], [.5])
 ])
 
+# transform function for Line model
 transformLine = torchvision.transforms.Compose([
     torchvision.transforms.Resize((100, 100)),
     torchvision.transforms.ToTensor()
@@ -255,7 +224,6 @@ EnumWindows(winEnumHandler, None)
 size = GetWindowRect(DBDhwnd)
 width = size[2]
 height = size[3]
-
 
 # displays the prediction
 def displayBasic():
@@ -324,7 +292,6 @@ def displayTrees():
         for y in x.listNodes():
             pygame.draw.arc(screen, colors[count], pygame.Rect(webIndex[y][0] - 44, webIndex[y][1] - 44, 88, 88), 0, 360, 8)
         count += 1
-
 
     pygame.display.update()
     sleep(360)
@@ -465,10 +432,10 @@ if mode == 0:
 
 
         #Displays the nodes and graph lines
-        #displayBasic()
+        displayBasic()
 
         #Displays the trees
-        displayTrees()
+        #displayTrees()
         exit(1)
 
 elif mode == 1:
@@ -564,16 +531,10 @@ elif mode == 4:
     img = grabImage(width, height, 0, 0, DBDhwnd)
 
     # saves the line pics for addition to the machine learning folders
-    '''for x in AdjecentDict:
+    for x in AdjecentDict:
         for y in AdjecentDict[x]:
             coord = LineCoordsDict[str(x) + '-' + str(y)]
             temp = fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10])
-            temp.save('Web/' + str(current_time) + str(counter) + ".png")
-            counter += 1'''
-
-    #prints image hash for the dict
-    for x in AdjecentDict:
-        for y in AdjecentDict[x]:
-            hashes[str(x) + '-' + str(y)] = [str(imagehash.average_hash(PILopen('Line/GrayLines/' + str(counter) + '.png'))), str(imagehash.average_hash(PILopen('Line/GoldLines/' + str(counter) + '.png')))]
+            temp.save('Web/' + str(counter) + ".png")
             counter += 1
-    print(hashes)
+
