@@ -112,7 +112,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load the training dataset
-    folder_dataset = datasets.ImageFolder(root="Line")
+    folder_dataset = datasets.ImageFolder(root="LineTrain")
 
     # Resize the images and transform to tensors
     transformation = transforms.Compose([

@@ -1,4 +1,3 @@
-import sys
 from operator import itemgetter
 from time import sleep
 import imagehash
@@ -18,7 +17,7 @@ from LineClassify import SiameseNetwork
 import torch.nn.functional as F
 
 character = "Executioner"
-mode = 2  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
+mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 
 DBDhwnd = None
@@ -27,9 +26,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 halt = False
 
 class treeNode:
-    def __init__(self, number, hash):
+    def __init__(self, number, img):
         self.number = number
-        self.hash = hash
+        self.img = img
         self.children = []
         self.parent = None
 
@@ -48,32 +47,30 @@ class treeNode:
 
         return nodes
 
-    def search(self, hash):
+    def search(self):
         path = []
-        for y in hash:
-            stack = [self]
+        stack = [self]
 
-            while len(stack) != 0:
-                current = stack.pop(0)
+        while len(stack) != 0:
+            current = stack.pop(0)
 
-                for x in current.children:
-                    stack.append(x)
+            for x in current.children:
+                stack.append(x)
 
-                dif = abs(imagehash.hex_to_hash(current.hash) - imagehash.hex_to_hash(y))
-                if dif < 25:
-                    if current.number not in path:
-                        path.append(current.number)
-                    if current.parent is not None:
-                        if current.parent.number not in path:
-                            path.append(current.parent.number)
-                        if current.parent.parent is not None:
-                            if current.parent.parent.number not in path:
-                                path.append(current.parent.parent.number)
-
+            dif = abs(imagehash.hex_to_hash(current.hash) - imagehash.hex_to_hash(y))
+            if dif < 25:
+                if current.number not in path:
+                    path.append(current.number)
+                if current.parent is not None:
+                    if current.parent.number not in path:
+                        path.append(current.parent.number)
+                    if current.parent.parent is not None:
+                        if current.parent.parent.number not in path:
+                            path.append(current.parent.parent.number)
         return path
 
     def __str__(self):
-        return "value % s --- hash %s --- children %s" % (self.number, self.hash, self.children)
+        return "value % s --- children %s" % (self.number, self.children)
 
     def __repr__(self):
         return str(self)
@@ -326,19 +323,6 @@ if mode == 0:
     LineModel.load_state_dict(torch.load("LineModel.pth"))
     LineModel.eval()
 
-    #loads priority hashes
-    for x in range(1, 10):
-        try:
-            hashes.append(str(imagehash.average_hash(PILopen('Priority/' + str(x) + '.png'), hash_size=16)))
-        except:
-            pass
-
-    for x in range(1, 10):
-        try:
-            hashes.append(str(imagehash.average_hash(PILopen('Priority/' + character + '/' + str(x) + '.png'), hash_size=16)))
-        except:
-            pass
-
     while True:
         nodes = []
         lines = {}
@@ -360,7 +344,7 @@ if mode == 0:
             nodes.append(output_idx)
 
         #id the graph lines
-        saved = transformLine(PILopen('Line/Lines/0.png').convert("L")).to(device)
+        saved = transformLine(PILopen('LineTrain/Lines/0.png').convert("L")).to(device)
         for x in AdjecentDict:
             for y in AdjecentDict[x]:
                 coord = LineCoordsDict[str(x) + '-' + str(y)]
@@ -392,20 +376,20 @@ if mode == 0:
         #creates the trees
         for x in baseOpt:
             if nodes[x] == 2 or nodes[x] == 3:
-                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40]), hash_size=16))
-                rootNode = treeNode(x, imgHash)
+                pic = fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])
+                rootNode = treeNode(x, pic)
 
                 for y in AdjecentDict[x]:
                     if (nodes[y] == 2 or nodes[y] == 3) and (lines[str(x) + '-' + str(y)] == 1) and y not in visited:
-                        imgHash = str(imagehash.average_hash(fromarray(img[webIndex[y][1] - 40:webIndex[y][1] + 40, webIndex[y][0] - 40:webIndex[y][0] + 40]), hash_size=16))
-                        midNode = treeNode(y, imgHash)
+                        pic = fromarray(img[webIndex[y][1] - 40:webIndex[y][1] + 40, webIndex[y][0] - 40:webIndex[y][0] + 40])
+                        midNode = treeNode(y, pic)
                         rootNode.addNode(midNode)
                         visited.append(y)
 
                         for z in AdjecentDict[y]:
                             if (nodes[z] == 2 or nodes[z] == 3) and (lines[str(y) + '-' + str(z)] == 1) and z not in visited:
-                                imgHash = str(imagehash.average_hash(fromarray(img[webIndex[z][1] - 40:webIndex[z][1] + 40, webIndex[z][0] - 40:webIndex[z][0] + 40]), hash_size=16))
-                                leafNode = treeNode(z, imgHash)
+                                pic = fromarray(img[webIndex[z][1] - 40:webIndex[z][1] + 40, webIndex[z][0] - 40:webIndex[z][0] + 40])
+                                leafNode = treeNode(z, pic)
                                 midNode.addNode(leafNode)
                                 visited.append(z)
 
@@ -432,10 +416,10 @@ if mode == 0:
 
 
         #Displays the nodes and graph lines
-        displayBasic()
+        #displayBasic()
 
         #Displays the trees
-        #displayTrees()
+        displayTrees()
         exit(1)
 
 elif mode == 1:

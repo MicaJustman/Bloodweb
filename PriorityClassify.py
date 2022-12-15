@@ -133,35 +133,13 @@ class ContrastiveLoss(torch.nn.Module):
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-    csvFile = open('Priority.csv', 'w', newline='')
-    csvFile.seek(0)
-    csvFile.truncate()
-    writer = csv.writer(csvFile)
-    counter = 0
-
-    for file in os.listdir('Priority'):
-        path = os.path.join('Priority', file)
-        path = path.replace("\\", "/")
-        for file2 in os.listdir(path):
-            path2 = os.path.join(path, file2)
-            path2 = path2.replace("\\", "/")
-            for file3 in os.listdir(path2):
-                finalPath = os.path.join(path2, file3)
-                finalPath = finalPath.replace("\\", "/")
-                writer.writerow([finalPath, counter])
-            counter += 1
-
-    csvFile.close()
-
-    exit()
-
     # Load the training dataset
-    folder_dataset = datasets.ImageFolder(root="Line")
+    folder_dataset = datasets.ImageFolder(root="PriorityTrain")
 
     # Resize the images and transform to tensors
     transformation = transforms.Compose([
-        transforms.Resize((100, 100)),
+        transforms.Resize((200, 200)),
+        transforms.CenterCrop(100),
         transforms.ToTensor()
     ])
 
@@ -179,7 +157,7 @@ def main():
     optimizer = optim.Adam(net.parameters(), lr = .0005)
 
     # Iterate throught the epochs
-    for epoch in range(100):
+    for epoch in range(200):
     # Iterate over batches
         for i, (img0, img1, label) in enumerate(train_dataloader, 0):
 
