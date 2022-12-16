@@ -16,7 +16,6 @@ import torchvision
 from LineClassify import SiameseNetwork
 import torch.nn.functional as F
 
-character = "Executioner"
 mode = 0  # mode 0 for main run, mode 1 for highlighting node locations on screen, mode 2 for grabbing nodes for pytorch model directory
           # mode 3 for highlighting line boxes on screen, mode 4 for grabbing lines for pytorch model directory
 
@@ -147,6 +146,12 @@ LineCoordsDict = {
     '16-29': (366, 477),
     '17-29': (390, 424),
     '17-18': (451, 365),
+    '0':[(656, 496), (563, 495)],
+    '1':[(656, 496), (706, 581)],
+    '2':[(706, 581), (657, 664)],
+    '3':[(657, 664), (565, 664)],
+    '4':[(565, 664), (516, 576)],
+    '5':[(516, 576), (563, 495)]
 }
 
 # monitor coords of each node spot
@@ -299,11 +304,12 @@ def mouseControl(x, y):
     temp = mouse.position
     dif = (x - temp[0], y - temp[1])
     mouse.move(dif[0], dif[1])
-    sleep(.4)
+    sleep(.3)
     mouse.press(Button.left)
-    sleep(.6)
+    sleep(.5)
     mouse.release(Button.left)
-    sleep(.2)
+    mouse.position = (610, 570)
+    sleep(1)
 
 if mode == 0:
     hashes = []
@@ -362,6 +368,17 @@ if mode == 0:
         for x in base:
             count = 0
 
+            for z in range(2):
+                coord = LineCoordsDict[str(x)][z]
+                temp = transformLine(
+                fromarray(img[coord[1] - 10:coord[1] + 10, coord[0] - 10:coord[0] + 10]).convert("L")).to(device)
+
+                output1, output2 = LineModel(saved.unsqueeze(0), temp.unsqueeze(0))
+                euclidean_distance = F.pairwise_distance(output1, output2)
+
+                if euclidean_distance < .5:
+                    count += 1
+
             for y in AdjecentDict[x]:
                 if (nodes[y] == 2 or nodes[y] == 3) and (lines[str(x) + '-' + str(y)] == 1):
                     count += 1
@@ -394,33 +411,36 @@ if mode == 0:
                                 visited.append(z)
 
                 trees.append(rootNode)
-        print(trees)
+        trees.reverse()
 
-        '''for x in trees:
+        for x in trees:
             print(x.listNodes())
             for y in x.listNodes():
                 finalOrder.append(y)
 
         for x in finalOrder:
+            img = grabImage(width, height, 0, 0, DBDhwnd)
+            temp = fromarray(img[webIndex[x][1] - 40:webIndex[x][1] + 40, webIndex[x][0] - 40:webIndex[x][0] + 40])
+            output = NodeModel(transform(temp).unsqueeze(0))
+            if torch.argmax(output) == 2:
                 if halt:
                     exit(1)
-                if nodes[x] == 2:
+                else:
                     mouseControl(webIndex[x][0], webIndex[x][1])
 
-        sleep(2)
         mouse.position = (610, 570)
-        sleep(.1)
+        sleep(.2)
         mouse.press(Button.left)
-        sleep(8)
-        mouse.release(Button.left)'''
+        sleep(4)
+        mouse.release(Button.left)
 
 
         #Displays the nodes and graph lines
         #displayBasic()
 
         #Displays the trees
-        displayTrees()
-        exit(1)
+        #displayTrees()
+        #exit(1)
 
 elif mode == 1:
     # uncomment this line and clear webIndex to record new indexes. Hit any key to store the location of the mouse
@@ -471,7 +491,8 @@ elif mode == 2:
 
 elif mode == 3:
     # uncomment this line and clear LineIndex to record new indexes. Hit any key to store the location of the mouse
-    '''with keyboard.Listener(on_press=recordLine) as listener:
+    '''lineIndex = []
+    with keyboard.Listener(on_press=recordLine) as listener:
             listener.join()'''
 
     # pygame init display
@@ -480,6 +501,7 @@ elif mode == 3:
     done = False
     Black = (0, 0, 0)  # Transparency color
     blue = (255, 255, 255)
+    innerConnections = ['0', '1', '2', '3', '4', '5']
 
     # Create layered window
     hwnd = pygame.display.get_wm_info()["window"]
@@ -501,6 +523,13 @@ elif mode == 3:
             for y in AdjecentDict[x]:
                 coord = LineCoordsDict[str(x) + '-' + str(y)]
                 pygame.draw.rect(screen, blue, pygame.Rect(coord[0] - 10, coord[1] - 10, 20, 20), 1)
+
+        for x in innerConnections:
+            coord = LineCoordsDict[x][0]
+            pygame.draw.rect(screen, blue, pygame.Rect(coord[0] - 10, coord[1] - 10, 20, 20), 1)
+            coord = LineCoordsDict[x][1]
+            pygame.draw.rect(screen, blue, pygame.Rect(coord[0] - 10, coord[1] - 10, 20, 20), 1)
+
 
         pygame.display.update()
 

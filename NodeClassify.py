@@ -12,6 +12,7 @@ num_epochs = 6
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 transform = transforms.Compose([
+    transforms.Resize((80, 80)),
     transforms.ToTensor(),
     transforms.Normalize([.5], [.5])
 ])
