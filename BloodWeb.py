@@ -1,13 +1,12 @@
 from operator import itemgetter
 from time import sleep
-import imagehash
 import pygame
 from PIL.Image import frombuffer, fromarray, open as PILopen
 from numpy import asarray
 from pynput import keyboard
 from pynput.mouse import Controller, Button
 from win32api import RGB
-from win32con import SRCCOPY, GWL_EXSTYLE, WS_EX_LAYERED, HWND_TOP, LWA_COLORKEY, SWP_NOSIZE, LWA_ALPHA
+from win32con import SRCCOPY, GWL_EXSTYLE, WS_EX_LAYERED, HWND_TOP, SWP_NOSIZE, LWA_ALPHA
 from win32gui import IsWindowVisible, GetWindowText, GetWindowDC, ReleaseDC, DeleteObject, EnumWindows, GetWindowRect, SetWindowLong, GetWindowLong, SetLayeredWindowAttributes, SetWindowPos
 from win32ui import CreateDCFromHandle, CreateBitmap
 from datetime import datetime
@@ -56,7 +55,7 @@ class treeNode:
             for x in current.children:
                 stack.append(x)
 
-            dif = abs(imagehash.hex_to_hash(current.hash) - imagehash.hex_to_hash(y))
+            dif = 0
             if dif < 25:
                 if current.number not in path:
                     path.append(current.number)
@@ -413,7 +412,7 @@ if mode == 0:
                 trees.append(rootNode)
         trees.reverse()
 
-        for x in trees:
+        '''for x in trees:
             print(x.listNodes())
             for y in x.listNodes():
                 finalOrder.append(y)
@@ -432,7 +431,7 @@ if mode == 0:
         sleep(.2)
         mouse.press(Button.left)
         sleep(4)
-        mouse.release(Button.left)
+        mouse.release(Button.left)'''
 
 
         #Displays the nodes and graph lines
